@@ -1,0 +1,8 @@
+.chat-container {
+    width: 100%vw;
+    height: 100vh
+}
+.chat-container .conversation {
+    height: 50%;
+    width: 50%;
+}
