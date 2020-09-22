@@ -13,7 +13,8 @@
     "socket.io-client": "^2.3.0",
     "vue": "^2.6.11",
     "vue-custom-element": "^3.2.14",
-    "vue-router": "^3.2.0"
+    "vue-router": "^3.2.0",
+    "webpack": "^4.44.2"
   },
   "devDependencies": {
     "@vue/cli-plugin-eslint": "~4.5.0",

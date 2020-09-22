@@ -77,14 +77,16 @@ export default {
     return {
       socket: null,
       messages: {},
-      namespaces: {},
+      namespaces: {
+        vitamin2: []
+      },
       activeUser: 'default',
       unreadMessages: {},
       inputMessage: null,
     };
   },
   created() {
-    this.socket = io('http://dev.nemtish.com/admin', {
+    this.socket = io('http://localhost:3000/admin', {
       query: 'token=123',
     });
 
@@ -95,19 +97,27 @@ export default {
   },
   methods: {
     requestData() {
-      this.socket.emit('GET_WORKSPACES', null, (namespaces) => {
+      this.socket.emit('GET_NAMESPACES', null, (namespaces) => {
+        console.log('REQ: ', namespaces);
         this.namespaces = namespaces;
       });
     },
     handleData() {
-      this.socket.on('error', (reason) => {
-        console.log(reason);
+      this.socket.on('message', (message) => {
+        console.log('MESSAGE: ', message);
+        this.messages.default.push(message);
+
+        if (message.type === 'new_user') {
+          this.messages.default.push(message);
+          this.namespaces['vitamin2'].push(message.user);
+          this.$set(this.messages, message.user, []);
+        } else if (message.type === 'chat_message') {
+          this.messages[message.user].push(message);
+        }
       });
 
-      this.socket.on('new-user', (namespace, message) => {
-        this.messages.default.push(message);
-        this.namespaces[namespace].push(message.user);
-        this.$set(this.messages, message.user, []);
+      this.socket.on('error', (reason) => {
+        console.log(reason);
       });
 
       this.socket.on('new-message', (namespace, message) => {
