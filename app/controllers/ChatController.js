@@ -41,7 +41,8 @@ module.exports = class ChatController {
 
                         this.handlers.handle({
                             ...message,
-                            dashboardUrl: namespace.admin_url
+                            dashboardUrl: namespace.admin_url,
+                            socketId: socket.id
                         });
                     });
 

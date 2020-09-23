@@ -1,22 +1,47 @@
-const { Socket } = require('../config/projectDependencies');
+const Handler = require('../handlers/Handler');
+const SlackMessage = require('../handlers/SlackMessage');
+const Subscriber = require('../subscribers/Subscriber');
+const SlackMessageAdded = require('../subscribers/SlackMessageAdded');
 
-module.exports = (slackEvents) => {
+module.exports = class SlackController {
+    constructor(deps) {
+        const { DatabaseService, eventBus, Socket } = deps;
 
-    const listen = () => {
-        slackEvents.on('message', event => {
-            console.log(`Received a message event: user ${event.user} in channel ${event.channel} says ${event.text}`);
-            let blabla = {
-               id: '16002624628406372612416626762',
-                message: event.text,
-                user: 'AAAAAAAAAAAAA',
-                type: 1
-            };
+        this.socket = Socket;
+        this.userRepository = DatabaseService.userRepository;
+        this.namespaceRepository = DatabaseService.namespaceRepository;
 
-            Socket.io.of('/admin').emit('message', blabla);
+        this.subscriber = new Subscriber({
+            [SlackMessage.TYPE]: new SlackMessageAdded(deps),
+        });
+
+        this.handlers = new Handler({
+            [SlackMessage.TYPE]: new SlackMessage(this.userRepository, eventBus)
         });
     }
 
-    return {
-        listen
+    listen(namespaceName, slackEvents) {
+        this.namespaceRepository.getByName(namespaceName)
+            .then(namespace => {
+                slackEvents.on('message', async (event) => {
+                    console.log(`Received a message event: user ${event.user} in channel ${event.channel} says ${event.text}`);
+                    const userObj = await this.userRepository.getByConversationId(event.channel);
+                    if (event.client_msg_id && userObj) {
+                        const message = {
+                            type: 'slack_message',
+                            payload: {
+                                user: userObj.name,
+                                text: event.text,
+                            }
+                        };
+
+                        this.handlers.handle({
+                            ...message,
+                            dashboardUrl: namespace.admin_url,
+                            chatUrl: namespace.url
+                        });
+                    }
+                });
+            });
     };
 }

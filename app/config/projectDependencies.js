@@ -1,12 +1,14 @@
 const InMemoryDBService = require('../persistence/InMemoryDBService');
 const Socket = require('../web/socket');
+const SlackService = require('../SlackService');
 
 module.exports = (() => {
-    let socket = null;
+    const databaseService = new InMemoryDBService();
 
     return {
-        DatabaseService: new InMemoryDBService(),
+        DatabaseService: databaseService,
         Socket: new Socket(),
+        SlackService: new SlackService(databaseService.userRepository),
         eventBus: []
     }
 })();
